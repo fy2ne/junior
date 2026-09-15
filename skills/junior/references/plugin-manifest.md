@@ -27,7 +27,7 @@ description: Internal provider workflows
 | `target`               | target/config metadata      | `config-key` must be in `config-keys`                                               |
 | `runtime-dependencies` | sandbox packages            | `npm` or `system`                                                                   |
 | `runtime-postinstall`  | setup commands              | `cmd`, optional `args`, optional `sudo`                                             |
-| `mcp`                  | hosted HTTP MCP             | HTTPS `url`; omit `allowed-tools` by default; optional `wrapped-tools`              |
+| `mcp`                  | hosted HTTP MCP             | HTTPS `url`; omit `allowed-tools` by default; optional `wrapped-tools` and `auth`   |
 
 ## OAuth bearer
 
@@ -80,6 +80,28 @@ mcp:
 Omit `allowed-tools` unless the plugin must hide part of the provider surface.
 When set, only listed tools are exposed and discovery fails if any are missing.
 
+## MCP bot auth
+
+Use `mcp.auth` when the MCP server trusts Junior as a bot, not each user.
+
+```yaml
+mcp:
+  url: https://mcp.example.com/mcp
+  auth:
+    issuer: https://junior.example.com
+    key-id: junior-1
+    private-key-env: EXAMPLE_MCP_PRIVATE_KEY
+```
+
+- Junior signs a short-lived RS256 JWT assertion with the private key. Junior
+  exchanges the assertion at the server token endpoint with the RFC 7523
+  `jwt-bearer` grant. Junior does not send an OAuth link to users.
+- The JWT subject is the plugin `name`. The audience is the server issuer.
+- `private-key-env` holds a PKCS#8 PEM private key. Keep real newlines in the
+  value.
+- The server must trust `issuer` and must get the public key for `key-id` from a
+  JWKS URL that you publish.
+
 ### MCP wrapper tools
 
 Code plugins can replace selected provider tools with plugin-owned tools:
@@ -120,7 +142,8 @@ mcp: {
 - `oauth` requires `credentials.type: oauth-bearer` in `plugin.yaml`.
 - `mcp.url` env refs must be declared in `env-vars`.
 - API-header env refs must not declare defaults.
-- `command-env` env refs must not reuse API-header, credential, or OAuth env vars.
+- `command-env` env refs must not reuse API-header, credential, OAuth, or
+  `mcp.auth.private-key-env` env vars.
 - `Authorization` is reserved inside `oauth-bearer` `credentials.api-headers`.
 - `target.config-key` must be listed in `config-keys`.
 - System dependencies must not declare `version`.
