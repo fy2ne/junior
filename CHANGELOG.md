@@ -1,4 +1,14 @@
 # Changelog
+## 0.216.0
+
+### New Features ✨
+
+- (chat) Align task planning with Codex by @sentry-junior in [#1860](https://github.com/getsentry/junior/pull/1860)
+
+### Bug Fixes 🐛
+
+- (chat) Keep compacted history exact by @sentry-junior in [#1863](https://github.com/getsentry/junior/pull/1863)
+
 ## 0.215.0
 
 ### New Features ✨
