@@ -612,7 +612,10 @@ function assertCommandEnvDoesNotExposeHostSecretRefs(
   if (mcp?.auth) {
     hostOnlyRefs.add(mcp.auth.privateKeyEnv);
   }
-  for (const value of Object.values(apiHeaders ?? {})) {
+  for (const value of [
+    ...Object.values(apiHeaders ?? {}),
+    ...Object.values(mcp?.headers ?? {}),
+  ]) {
     for (const name of envReferences(value)) {
       hostOnlyRefs.add(name);
     }
@@ -961,6 +964,13 @@ function normalizeMcp(
         forbiddenKeys: FORBIDDEN_API_HEADER_NAMES,
       })
     : undefined;
+  for (const [key, value] of Object.entries(headers ?? {})) {
+    assertDeclaredEnvReferences(
+      value,
+      envVars,
+      `Plugin ${name} mcp.headers.${key}`,
+    );
+  }
 
   const auth = result.data.auth
     ? {

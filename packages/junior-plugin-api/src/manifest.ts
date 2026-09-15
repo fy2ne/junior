@@ -66,6 +66,7 @@ export interface PluginMcpConfig {
   allowedTools?: string[];
   /** Bot auth: sign short-lived JWT assertions instead of per-actor OAuth. */
   auth?: PluginMcpAuthConfig;
+  /** Request headers. Values may use `${NAME}` refs to declared env vars; Junior resolves them at connect time. */
   headers?: Record<string, string>;
   transport: "http";
   url: string;
