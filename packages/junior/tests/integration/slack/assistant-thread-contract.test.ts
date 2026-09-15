@@ -70,6 +70,19 @@ function progressThenReply(): StreamFn {
   ]);
 }
 
+function planThenReply(): StreamFn {
+  return createModelStream([
+    {
+      type: "toolCall",
+      name: "update_plan",
+      arguments: {
+        plan: [{ step: "Run the command", status: "in_progress" }],
+      },
+    },
+    { type: "text", text: "Done." },
+  ]);
+}
+
 async function createDirectMessageBot(modelStream: StreamFn) {
   const bot = new JuniorChat<{ slack: SlackAdapter }>({
     userName: "junior",
@@ -170,7 +183,7 @@ describe("Slack contract: assistant-thread delivery", () => {
   });
 
   it("posts assistant status with a raw DM channel id when thread_ts is present", async () => {
-    const bot = await createDirectMessageBot(progressThenReply());
+    const bot = await createDirectMessageBot(planThenReply());
     const waitUntil = slackWebhookClient.waitUntil();
 
     const response = await handleChatSdkPlatformWebhook(

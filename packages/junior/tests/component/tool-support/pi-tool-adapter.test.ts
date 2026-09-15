@@ -9,6 +9,7 @@ import {
   type ToolActionReviewer,
 } from "@/chat/tool-support/action-review";
 import { createReportProgressTool } from "@/chat/tools/runtime/report-progress";
+import { createUpdatePlanTool } from "@/chat/tools/runtime/update-plan";
 import { createCallMcpToolTool } from "@/chat/tools/skill/call-mcp-tool";
 import { createBashTool } from "@/chat/tools/sandbox/bash";
 import type { Skill } from "@/chat/skills";
@@ -64,12 +65,12 @@ describe("Pi tool adapter", () => {
     handleToolExecutionError.mockClear();
   });
 
-  it("emits assistant status only for reportProgress", async () => {
+  it("emits assistant status for update_plan only", async () => {
     const sandbox = new SkillSandbox([], []);
     const onStatus = vi.fn(async () => undefined);
-    const [reportProgressTool, bashTool] = createPiAgentTools(
+    const [update_planTool, bashTool] = createPiAgentTools(
       {
-        reportProgress: createReportProgressTool(),
+        update_plan: createUpdatePlanTool(),
         bash: {
           description: "bash",
           inputSchema: {} as any,
@@ -81,13 +82,16 @@ describe("Pi tool adapter", () => {
       onStatus,
     );
 
-    await reportProgressTool!.execute("tool-progress", {
-      message: "  Reviewing results  ",
+    await update_planTool!.execute("tool-plan", {
+      plan: [
+        { step: "Inspect current behavior", status: "completed" },
+        { step: "Implement the MVP", status: "in_progress" },
+      ],
     });
     await bashTool!.execute("tool-bash", { command: "pwd" });
 
-    expect(onStatus).toHaveBeenCalledTimes(1);
-    expect(onStatus).toHaveBeenCalledWith({ text: "Reviewing results" });
+    expect(onStatus).toHaveBeenCalledOnce();
+    expect(onStatus).toHaveBeenCalledWith({ text: "Implement the MVP" });
   });
 
   it("emits assistant status when reportProgress runs through executeTool", async () => {

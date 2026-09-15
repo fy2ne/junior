@@ -17,7 +17,10 @@ import {
   AuthorizationPauseError,
 } from "@/chat/services/auth-pause";
 import type { PluginAuthOrchestration } from "@/chat/services/plugin-auth-orchestration";
-import { buildReportedProgressStatus } from "@/chat/runtime/report-progress";
+import {
+  buildPlanStatus,
+  buildReportedProgressStatus,
+} from "@/chat/runtime/report-progress";
 import type { AssistantStatusSpec } from "@/chat/slack/assistant-thread/status";
 import type { SandboxTools } from "@/chat/sandbox/sandbox";
 import type { SkillSandbox } from "@/chat/sandbox/skill-sandbox";
@@ -252,7 +255,9 @@ export function createPiAgentTools(
     if (toolResultAttribute) {
       setSpanAttributes({
         "gen_ai.tool.call.result": toolResultAttribute,
-        ...(hasProjectedPrivateResult ? privateTraceResultAttributes() : undefined),
+        ...(hasProjectedPrivateResult
+          ? privateTraceResultAttributes()
+          : undefined),
         ...toGenAiPayloadTraceAttributes(
           "gen_ai.tool.call.result",
           resultAttributeValue,
@@ -275,10 +280,12 @@ export function createPiAgentTools(
     executionToolName: string,
     params: Record<string, unknown>,
   ) => {
-    if (executionToolName !== "reportProgress") {
-      return;
-    }
-    const status = buildReportedProgressStatus(params);
+    const status =
+      executionToolName === "update_plan"
+        ? buildPlanStatus(params)
+        : executionToolName === "reportProgress"
+          ? buildReportedProgressStatus(params)
+          : undefined;
     if (status) {
       await onStatus?.(status);
     }
