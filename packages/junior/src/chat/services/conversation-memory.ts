@@ -16,7 +16,7 @@ import {
   parseSlackMessageTs,
   type SlackMessageTs,
 } from "@/chat/slack/timestamp";
-import { escapeXml } from "@/chat/xml";
+import { escapeXml, escapeXmlAttribute } from "@/chat/xml";
 
 const CONTEXT_MIN_LIVE_MESSAGES = 12;
 const CONTEXT_COMPACTION_BATCH_SIZE = 24;
@@ -255,13 +255,13 @@ export function buildConversationContext(
     }
     lines.push('<thread-context authority="evidence-only">');
     for (const [index, message] of messages.entries()) {
-      const author = escapeXml(conversationAuthorDisplayName(message));
+      const author = escapeXmlAttribute(conversationAuthorDisplayName(message));
       const actorIdAttr = message.author?.userId
-        ? ` actor_id="${escapeXml(message.author.userId)}"`
+        ? ` actor_id="${escapeXmlAttribute(message.author.userId)}"`
         : "";
       const ts = new Date(message.createdAtMs).toISOString();
       const slackTsAttr = message.meta?.slackTs
-        ? ` slack_ts="${escapeXml(message.meta.slackTs)}"`
+        ? ` slack_ts="${escapeXmlAttribute(message.meta.slackTs)}"`
         : "";
       lines.push(
         `  <message index="${index + 1}" ts="${ts}" role="${message.role}" author="${author}"${actorIdAttr}${slackTsAttr}>`,

@@ -25,7 +25,7 @@ import {
 import type { SlackConversationContext } from "@/chat/slack/conversation-context";
 import type { SkillMetadata } from "@/chat/skills";
 import type { ActiveMcpCatalogSummary } from "@/chat/tool-support/skill/mcp-tool-summary";
-import { escapeXml } from "@/chat/xml";
+import { escapeXml, escapeXmlAttribute } from "@/chat/xml";
 import type { PluginPromptContributionContext } from "@/chat/plugins/prompt";
 import type {
   Destination,
@@ -231,7 +231,7 @@ function formatToolGuidanceForPrompt(
 
   const lines: string[] = [];
   for (const tool of guidedTools) {
-    lines.push(`  <tool name="${escapeXml(tool.name)}">`);
+    lines.push(`  <tool name="${escapeXmlAttribute(tool.name)}">`);
     if (tool.promptSnippet?.trim()) {
       lines.push(`    - ${escapeXml(tool.promptSnippet.trim())}`);
     }
@@ -630,7 +630,7 @@ function buildPluginPromptContributionsSection(
   ];
   for (const contribution of contributions) {
     lines.push(
-      `  <plugin-contribution plugin="${escapeXml(contribution.pluginName)}" id="${escapeXml(contribution.id)}">`,
+      `  <plugin-contribution plugin="${escapeXmlAttribute(contribution.pluginName)}" id="${escapeXmlAttribute(contribution.id)}">`,
       escapeXml(contribution.text.trim()),
       "  </plugin-contribution>",
     );
@@ -651,7 +651,7 @@ export function buildPluginSystemPromptContributions(
   ];
   for (const contribution of contributions) {
     lines.push(
-      `  <plugin-contribution plugin="${escapeXml(contribution.pluginName)}" id="${escapeXml(contribution.id)}">`,
+      `  <plugin-contribution plugin="${escapeXmlAttribute(contribution.pluginName)}" id="${escapeXmlAttribute(contribution.id)}">`,
       escapeXml(contribution.text.trim()),
       "  </plugin-contribution>",
     );

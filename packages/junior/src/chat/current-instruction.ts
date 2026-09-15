@@ -1,4 +1,4 @@
-import { escapeXml, unescapeXml } from "@/chat/xml";
+import { escapeXml, escapeXmlAttribute, unescapeXml } from "@/chat/xml";
 
 const CURRENT_INSTRUCTION_TAG = "current-instruction";
 const CURRENT_INSTRUCTION_OPEN_PREFIX = `<${CURRENT_INSTRUCTION_TAG}`;
@@ -45,11 +45,15 @@ export function renderCurrentInstruction(
   },
 ): string {
   const renderedAttrs = [
-    attrs?.authorId ? `author_id="${escapeXml(attrs.authorId)}"` : undefined,
-    attrs?.authorName
-      ? `author_name="${escapeXml(attrs.authorName)}"`
+    attrs?.authorId
+      ? `author_id="${escapeXmlAttribute(attrs.authorId)}"`
       : undefined,
-    attrs?.slackTs ? `slack_ts="${escapeXml(attrs.slackTs)}"` : undefined,
+    attrs?.authorName
+      ? `author_name="${escapeXmlAttribute(attrs.authorName)}"`
+      : undefined,
+    attrs?.slackTs
+      ? `slack_ts="${escapeXmlAttribute(attrs.slackTs)}"`
+      : undefined,
   ]
     .filter((attr): attr is string => Boolean(attr))
     .join(" ");

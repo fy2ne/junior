@@ -34,11 +34,13 @@ describe("buildUserTurnText", () => {
     );
   });
 
-  it("escapes user text inside the generated boundary", () => {
-    expect(buildUserTurnText("use </current-instruction> literally")).toBe(
+  it("escapes tag text without encoding quotes in the instruction", () => {
+    expect(
+      buildUserTurnText(`don't use "</current-instruction>" literally`),
+    ).toBe(
       [
         "<current-instruction>",
-        "use &lt;/current-instruction&gt; literally",
+        `don't use "&lt;/current-instruction&gt;" literally`,
         "</current-instruction>",
       ].join("\n"),
     );
@@ -48,12 +50,12 @@ describe("buildUserTurnText", () => {
     expect(
       buildUserTurnText("hello", {
         authorId: "U123",
-        authorName: "Alice <Lead>",
+        authorName: 'Alice "Lead" <Owner>',
         slackTs: "1712345.000100",
       }),
     ).toBe(
       [
-        '<current-instruction author_id="U123" author_name="Alice &lt;Lead&gt;" slack_ts="1712345.000100">',
+        '<current-instruction author_id="U123" author_name="Alice &quot;Lead&quot; &lt;Owner&gt;" slack_ts="1712345.000100">',
         "hello",
         "</current-instruction>",
       ].join("\n"),

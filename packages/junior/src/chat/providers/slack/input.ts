@@ -16,7 +16,7 @@ import { appendThreadContextMessages } from "@/chat/services/conversation-memory
 import { getMessageActorIdentity } from "@/chat/services/message-actor-identity";
 import { getStateAdapter } from "@/chat/state/adapter";
 import { acquireActiveLock } from "@/chat/state/locks";
-import { escapeXml } from "@/chat/xml";
+import { escapeXml, escapeXmlAttribute } from "@/chat/xml";
 
 /**
  * Return a stable key for one steering message. Resolved attachments may change
@@ -52,12 +52,17 @@ function renderRecentThreadMessageLines(
   const lines: string[] = [];
   for (const queued of messagesForContext) {
     const actor = inboundMessageActor(queued);
-    const author = escapeXml(actor?.authorName ?? "user");
+    const authorName = actor?.authorName ?? "user";
+    const author = escapeXml(authorName);
     const attrs = [
       `role="user"`,
-      `author="${author}"`,
-      actor?.authorId ? `actor_id="${escapeXml(actor.authorId)}"` : undefined,
-      actor?.slackTs ? `slack_ts="${escapeXml(actor.slackTs)}"` : undefined,
+      `author="${escapeXmlAttribute(authorName)}"`,
+      actor?.authorId
+        ? `actor_id="${escapeXmlAttribute(actor.authorId)}"`
+        : undefined,
+      actor?.slackTs
+        ? `slack_ts="${escapeXmlAttribute(actor.slackTs)}"`
+        : undefined,
     ]
       .filter((attr): attr is string => Boolean(attr))
       .join(" ");
