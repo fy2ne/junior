@@ -80,28 +80,6 @@ mcp:
 Omit `allowed-tools` unless the plugin must hide part of the provider surface.
 When set, only listed tools are exposed and discovery fails if any are missing.
 
-## MCP bot auth
-
-Use `mcp.auth` when the MCP server trusts Junior as a bot, not each user.
-
-```yaml
-mcp:
-  url: https://mcp.example.com/mcp
-  auth:
-    issuer: https://junior.example.com
-    key-id: junior-1
-    private-key-env: EXAMPLE_MCP_PRIVATE_KEY
-```
-
-- Junior signs a short-lived RS256 JWT assertion with the private key. Junior
-  exchanges the assertion at the server token endpoint with the RFC 7523
-  `jwt-bearer` grant. Junior does not send an OAuth link to users.
-- The JWT subject is the plugin `name`. The audience is the server issuer.
-- `private-key-env` holds a PKCS#8 PEM private key. Keep real newlines in the
-  value.
-- The server must trust `issuer` and must get the public key for `key-id` from a
-  JWKS URL that you publish.
-
 ### MCP wrapper tools
 
 Code plugins can replace selected provider tools with plugin-owned tools:
@@ -134,6 +112,26 @@ mcp: {
 - Prefer `afterMcpTool` when the only junior-owned work is a post-success side
   effect such as conversation annotations. Keep `wrappedTools` for cases that
   need a different product verb, idempotency, or a non-provider contract.
+
+## MCP bot auth
+
+Use `mcp.auth` when the MCP server trusts Junior as a bot, not each user.
+
+```yaml
+mcp:
+  url: https://mcp.example.com/mcp
+  auth:
+    issuer: https://junior.example.com
+    key-id: junior-1
+    private-key-env: EXAMPLE_MCP_PRIVATE_KEY
+```
+
+- Junior signs a short-lived RS256 assertion, with the plugin `name` as subject
+  and the server issuer as audience, then exchanges it with the ID-JAG profile
+  of the RFC 7523 `jwt-bearer` grant. Users get no OAuth link.
+- `private-key-env` holds a PKCS#8 PEM key with real newlines. The server must
+  trust `issuer` and must get the public key for `key-id` from a JWKS URL that
+  you publish.
 
 ## Parser traps
 

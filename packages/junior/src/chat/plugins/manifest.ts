@@ -521,9 +521,19 @@ function assertDeclaredEnvReferences(
     }
     if (envVars[name]?.default !== undefined) {
       throw new Error(
-        `${context} references env var ${name}, but API header env vars must not declare defaults`,
+        `${context} references env var ${name}, but header env vars must not declare defaults`,
       );
     }
+  }
+}
+
+function assertDeclaredHeaderEnvReferences(
+  headers: Record<string, string> | undefined,
+  envVars: Record<string, PluginEnvVarDeclaration>,
+  prefix: string,
+): void {
+  for (const [key, headerValue] of Object.entries(headers ?? {})) {
+    assertDeclaredEnvReferences(headerValue, envVars, `${prefix}.${key}`);
   }
 }
 
@@ -536,9 +546,7 @@ function normalizeRequiredApiHeaders(
   if (!apiHeaders) {
     throw new Error(`${prefix} must contain at least one header`);
   }
-  for (const [key, headerValue] of Object.entries(apiHeaders)) {
-    assertDeclaredEnvReferences(headerValue, envVars, `${prefix}.${key}`);
-  }
+  assertDeclaredHeaderEnvReferences(apiHeaders, envVars, prefix);
   return apiHeaders;
 }
 
@@ -596,38 +604,42 @@ function normalizeCommandEnv(
   );
 }
 
+/** Collect every env var that carries a host-only secret for one plugin. */
+function hostOnlyEnvNames(manifest: {
+  apiHeaders?: Record<string, string> | undefined;
+  credentials?: PluginCredentials | undefined;
+  oauth?: PluginOAuthConfig | undefined;
+  mcp?: PluginMcpConfig | undefined;
+}): Set<string> {
+  const names = new Set<string>();
+  if (manifest.mcp?.auth) {
+    names.add(manifest.mcp.auth.privateKeyEnv);
+  }
+  for (const value of [
+    ...Object.values(manifest.apiHeaders ?? {}),
+    ...Object.values(manifest.mcp?.headers ?? {}),
+  ]) {
+    for (const name of envReferences(value)) {
+      names.add(name);
+    }
+  }
+  if (manifest.credentials?.authTokenEnv) {
+    names.add(manifest.credentials.authTokenEnv);
+  }
+  if (manifest.oauth) {
+    names.add(manifest.oauth.clientIdEnv);
+    names.add(manifest.oauth.clientSecretEnv);
+  }
+  return names;
+}
+
 function assertCommandEnvDoesNotExposeHostSecretRefs(
   commandEnv: Record<string, string> | undefined,
-  apiHeaders: Record<string, string> | undefined,
-  credentials: PluginCredentials | undefined,
-  oauth: PluginOAuthConfig | undefined,
-  mcp: PluginMcpConfig | undefined,
+  hostOnlyRefs: Set<string>,
   pluginName: string,
 ): void {
   if (!commandEnv) {
     return;
-  }
-
-  const hostOnlyRefs = new Set<string>();
-  if (mcp?.auth) {
-    hostOnlyRefs.add(mcp.auth.privateKeyEnv);
-  }
-  for (const value of [
-    ...Object.values(apiHeaders ?? {}),
-    ...Object.values(mcp?.headers ?? {}),
-  ]) {
-    for (const name of envReferences(value)) {
-      hostOnlyRefs.add(name);
-    }
-  }
-  if (credentials) {
-    if (credentials.authTokenEnv) {
-      hostOnlyRefs.add(credentials.authTokenEnv);
-    }
-  }
-  if (oauth) {
-    hostOnlyRefs.add(oauth.clientIdEnv);
-    hostOnlyRefs.add(oauth.clientSecretEnv);
   }
 
   for (const [key, value] of Object.entries(commandEnv)) {
@@ -964,26 +976,24 @@ function normalizeMcp(
         forbiddenKeys: FORBIDDEN_API_HEADER_NAMES,
       })
     : undefined;
-  for (const [key, value] of Object.entries(headers ?? {})) {
-    assertDeclaredEnvReferences(
-      value,
-      envVars,
-      `Plugin ${name} mcp.headers.${key}`,
-    );
-  }
-
-  const auth = result.data.auth
-    ? {
-        issuer: result.data.auth.issuer,
-        keyId: result.data.auth["key-id"],
-        privateKeyEnv: result.data.auth["private-key-env"],
-      }
-    : undefined;
+  assertDeclaredHeaderEnvReferences(
+    headers,
+    envVars,
+    `Plugin ${name} mcp.headers`,
+  );
 
   return {
     transport: "http",
     url: result.data.url,
-    ...(auth ? { auth } : undefined),
+    ...(result.data.auth
+      ? {
+          auth: {
+            issuer: result.data.auth.issuer,
+            keyId: result.data.auth["key-id"],
+            privateKeyEnv: result.data.auth["private-key-env"],
+          },
+        }
+      : undefined),
     ...(headers ? { headers } : undefined),
     ...(result.data["allowed-tools"]
       ? { allowedTools: result.data["allowed-tools"] }
@@ -1183,10 +1193,7 @@ function parseManifestSource(
 
   assertCommandEnvDoesNotExposeHostSecretRefs(
     data["command-env"],
-    apiHeaders,
-    credentials,
-    manifest.oauth,
-    mcp,
+    hostOnlyEnvNames({ apiHeaders, credentials, oauth: manifest.oauth, mcp }),
     data.name,
   );
   assertCommandEnvHostRefsAreExplicitlyExposed(

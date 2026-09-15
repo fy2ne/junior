@@ -447,7 +447,7 @@ describe("plugin manifest API headers", () => {
         "/tmp/example",
       ),
     ).toThrow(
-      "Plugin example api-headers.Authorization references env var EXAMPLE_AUTH_HEADER, but API header env vars must not declare defaults",
+      "Plugin example api-headers.Authorization references env var EXAMPLE_AUTH_HEADER, but header env vars must not declare defaults",
     );
   });
 

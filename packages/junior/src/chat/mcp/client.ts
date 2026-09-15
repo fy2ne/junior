@@ -16,7 +16,7 @@ import {
   type McpProviderErrorPhase,
   toMcpProviderError,
 } from "./errors";
-import { resolveMcpHeaders } from "./headers";
+import { resolvePluginHeaderEnvRefs } from "@/chat/plugins/auth/api-headers-broker";
 
 type ListedTool = Awaited<ReturnType<Client["listTools"]>>["tools"][number];
 type ToolCallResult = Awaited<ReturnType<Client["callTool"]>>;
@@ -213,16 +213,18 @@ export class PluginMcpClient {
       );
     }
 
-    const requestInit: RequestInit = {};
-    const headers = resolveMcpHeaders(this.plugin.manifest.name, mcp.headers);
-    if (headers) {
-      requestInit.headers = new Headers(headers);
-    }
+    const headers = mcp.headers
+      ? resolvePluginHeaderEnvRefs(
+          this.plugin.manifest.name,
+          mcp.headers,
+          "MCP header",
+        )
+      : undefined;
 
     const sessionId = await this.getStoredTransportSessionId();
     this.lastAttemptedTransportSessionId = sessionId;
     const transport = new StreamableHTTPClientTransport(new URL(mcp.url), {
-      ...(Object.keys(requestInit).length > 0 ? { requestInit } : undefined),
+      ...(headers ? { requestInit: { headers } } : undefined),
       fetch: fetchWithBoundedOAuthErrorBodies(this.options.fetch, (status) => {
         const store = this.providerStatusStore.getStore();
         if (store) {

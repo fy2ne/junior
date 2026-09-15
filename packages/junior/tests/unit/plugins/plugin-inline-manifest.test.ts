@@ -79,7 +79,22 @@ describe("inline plugin manifests", () => {
     });
   });
 
-  it("preserves wrapped MCP tool and bot auth declarations", () => {
+  it("preserves wrapped MCP tool declarations", () => {
+    const manifest = parse({
+      name: "linear",
+      displayName: "Linear",
+      description: "Linear issue tracking",
+      mcp: {
+        transport: "http",
+        url: "https://mcp.linear.app/mcp",
+        wrappedTools: ["create_issue"],
+      },
+    });
+
+    expect(manifest.mcp?.wrappedTools).toEqual(["create_issue"]);
+  });
+
+  it("preserves MCP bot auth declarations", () => {
     const auth = {
       issuer: "https://junior.example.test",
       keyId: "junior-1",
@@ -93,11 +108,9 @@ describe("inline plugin manifests", () => {
         transport: "http",
         url: "https://mcp.linear.app/mcp",
         auth,
-        wrappedTools: ["create_issue"],
       },
     });
 
-    expect(manifest.mcp?.wrappedTools).toEqual(["create_issue"]);
     expect(manifest.mcp?.auth).toEqual(auth);
   });
 });

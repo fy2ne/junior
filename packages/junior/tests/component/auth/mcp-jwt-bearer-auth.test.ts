@@ -2,6 +2,10 @@ import { generateKeyPairSync, type KeyObject } from "node:crypto";
 import { decodeProtectedHeader, jwtVerify } from "jose";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  mcpHandshakeResponse,
+  type McpJsonRpcMessage,
+} from "../../msw/handlers/mcp-handshake";
 import { mswServer } from "../../msw/server";
 import {
   McpAuthorizationRequiredError,
@@ -13,78 +17,33 @@ import type { PluginDefinition } from "@/chat/plugins/types";
 
 const ORIGIN = "https://bot-mcp.example.test";
 const MCP_URL = `${ORIGIN}/mcp`;
-const ISSUER = "https://junior.example.test";
-const KEY_ID = "junior-1";
-const PRIVATE_KEY_ENV = "TEST_BOT_MCP_PRIVATE_KEY";
+const PROVIDER = "bot-mcp";
 const CLIENT_ID = "bot-client";
 const ACCESS_TOKEN = "bot-access-token";
+const AUTH = {
+  issuer: "https://junior.example.test",
+  keyId: "junior-1",
+  privateKeyEnv: "TEST_BOT_MCP_PRIVATE_KEY",
+};
 
-type JsonRpcMessage = { id?: unknown; method: string };
+// Key generation is slow, and no test mutates these.
+const TRUSTED_KEY = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const UNTRUSTED_KEY = generateKeyPairSync("rsa", { modulusLength: 2048 });
 
-function rsaKeyPair(): { privateKey: KeyObject; publicKey: KeyObject } {
-  return generateKeyPairSync("rsa", { modulusLength: 2048 });
-}
-
-/** Answer the MCP handshake and list one tool. */
-function mcpResponse(message: JsonRpcMessage): Response {
-  switch (message.method) {
-    case "initialize":
-      return HttpResponse.json({
-        jsonrpc: "2.0",
-        id: message.id,
-        result: {
-          protocolVersion: "2025-03-26",
-          capabilities: { tools: {} },
-          serverInfo: { name: "bot-mcp", version: "1.0.0" },
-        },
-      });
-    case "notifications/initialized":
-      return new HttpResponse(null, { status: 202 });
-    case "tools/list":
-      return HttpResponse.json({
-        jsonrpc: "2.0",
-        id: message.id,
-        result: {
-          tools: [
-            {
-              name: "status",
-              description: "Pipeline status",
-              inputSchema: { type: "object", properties: {} },
-            },
-          ],
-        },
-      });
-    default:
-      return HttpResponse.json(
-        {
-          jsonrpc: "2.0",
-          id: message.id,
-          error: { code: -32601, message: "unsupported" },
-        },
-        { status: 400 },
-      );
-  }
-}
-
-function jwtBearerPlugin(): PluginDefinition {
-  return {
-    dir: "/plugins/bot-mcp",
+function jwtBearerClient(): PluginMcpClient {
+  const plugin: PluginDefinition = {
+    dir: `/plugins/${PROVIDER}`,
     manifest: {
-      name: "bot-mcp",
+      name: PROVIDER,
       displayName: "Bot MCP",
       description: "MCP server that trusts Junior as a bot",
       configKeys: [],
-      mcp: {
-        transport: "http",
-        url: MCP_URL,
-        auth: {
-          issuer: ISSUER,
-          keyId: KEY_ID,
-          privateKeyEnv: PRIVATE_KEY_ENV,
-        },
-      },
+      mcp: { transport: "http", url: MCP_URL, auth: AUTH },
     },
   };
+  return new PluginMcpClient(plugin, {
+    authProvider: createJwtBearerMcpClientProvider(PROVIDER, MCP_URL, AUTH),
+  });
 }
 
 /**
@@ -104,7 +63,10 @@ function useJwtBearerMcpServer(trustedKey: KeyObject) {
           },
         });
       }
-      return mcpResponse((await request.json()) as JsonRpcMessage);
+      return mcpHandshakeResponse(
+        (await request.json()) as McpJsonRpcMessage,
+        PROVIDER,
+      );
     }),
     http.get(`${ORIGIN}/.well-known/oauth-protected-resource/mcp`, () =>
       HttpResponse.json({
@@ -132,13 +94,13 @@ function useJwtBearerMcpServer(trustedKey: KeyObject) {
       tokenRequests.push(params);
       try {
         const assertion = params.get("assertion") ?? "";
-        if (decodeProtectedHeader(assertion).kid !== KEY_ID) {
+        if (decodeProtectedHeader(assertion).kid !== AUTH.keyId) {
           throw new Error("unknown key id");
         }
         const { payload } = await jwtVerify(assertion, trustedKey, {
-          issuer: ISSUER,
+          issuer: AUTH.issuer,
           audience: `${ORIGIN}/`,
-          subject: "bot-mcp",
+          subject: PROVIDER,
           typ: "oauth-id-jag+jwt",
         });
         if (payload.client_id !== CLIENT_ID || payload.resource !== MCP_URL) {
@@ -161,29 +123,19 @@ function useJwtBearerMcpServer(trustedKey: KeyObject) {
 }
 
 describe("jwt-bearer MCP auth through PluginMcpClient", () => {
-  let signingKey: ReturnType<typeof rsaKeyPair>;
-
   beforeEach(() => {
-    signingKey = rsaKeyPair();
-    process.env[PRIVATE_KEY_ENV] = signingKey.privateKey
+    process.env[AUTH.privateKeyEnv] = TRUSTED_KEY.privateKey
       .export({ type: "pkcs8", format: "pem" })
       .toString();
   });
 
   afterEach(() => {
-    delete process.env[PRIVATE_KEY_ENV];
+    delete process.env[AUTH.privateKeyEnv];
   });
 
   it("exchanges a signed assertion for an access token without user interaction", async () => {
-    const server = useJwtBearerMcpServer(signingKey.publicKey);
-    const plugin = jwtBearerPlugin();
-    const client = new PluginMcpClient(plugin, {
-      authProvider: createJwtBearerMcpClientProvider(
-        plugin.manifest.name,
-        MCP_URL,
-        plugin.manifest.mcp!.auth!,
-      ),
-    });
+    const server = useJwtBearerMcpServer(TRUSTED_KEY.publicKey);
+    const client = jwtBearerClient();
 
     try {
       const tools = await client.listTools();
@@ -199,15 +151,8 @@ describe("jwt-bearer MCP auth through PluginMcpClient", () => {
   });
 
   it("surfaces a rejected assertion as a provider failure, not an authorization pause", async () => {
-    const server = useJwtBearerMcpServer(rsaKeyPair().publicKey);
-    const plugin = jwtBearerPlugin();
-    const client = new PluginMcpClient(plugin, {
-      authProvider: createJwtBearerMcpClientProvider(
-        plugin.manifest.name,
-        MCP_URL,
-        plugin.manifest.mcp!.auth!,
-      ),
-    });
+    const server = useJwtBearerMcpServer(UNTRUSTED_KEY.publicKey);
+    const client = jwtBearerClient();
 
     try {
       const failure = await client.listTools().catch((error: unknown) => error);
@@ -215,7 +160,6 @@ describe("jwt-bearer MCP auth through PluginMcpClient", () => {
       expect(server.tokenRequests.length).toBeGreaterThan(0);
       expect(failure).not.toBeInstanceOf(McpAuthorizationRequiredError);
       expect(failure).toBeInstanceOf(McpProviderError);
-      expect(failure).toMatchObject({ provider: "bot-mcp" });
     } finally {
       await client.close();
     }

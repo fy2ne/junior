@@ -1,9 +1,15 @@
 /**
  * Non-interactive MCP auth for bot plugins.
  *
- * When a manifest declares `mcp.auth`, this provider signs a short-lived RFC 7523 jwt-bearer
- * assertion with a plugin-held private key and the SDK exchanges it at the server token endpoint.
- * No user, no browser redirect; expired access tokens re-mint automatically on the next 401.
+ * When a manifest declares `mcp.auth`, this provider signs a short-lived assertion with a
+ * plugin-held private key and the SDK exchanges it at the server token endpoint. No user, no
+ * browser redirect; expired access tokens re-mint automatically on the next 401.
+ *
+ * This is the ID-JAG profile of RFC 7523: the assertion is the grant (§2.1), it carries
+ * `client_id` and `resource` claims, and `aud` is the authorization server issuer. The SDK's
+ * own PrivateKeyJwtProvider implements §2.2 client authentication with a client_credentials
+ * grant instead, which Python MCP servers do not accept yet, so it does not fit here.
+ *
  * The absent redirectUrl is what routes the SDK into its non-interactive token flow, the
  * `oauth-id-jag+jwt` typ header is what identity-assertion servers require, and the placeholder
  * redirect_uri exists only because dynamic client registration rejects an empty list.

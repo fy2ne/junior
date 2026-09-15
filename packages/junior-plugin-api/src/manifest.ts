@@ -52,6 +52,7 @@ export interface PluginRuntimePostinstallCommand {
   sudo?: boolean;
 }
 
+/** Bot credentials for the ID-JAG profile of the RFC 7523 `jwt-bearer` grant. */
 export interface PluginMcpAuthConfig {
   /** Issuer string the MCP server trusts for this bot. */
   issuer: string;
