@@ -1392,7 +1392,7 @@ describe("executeAgentRun progressive MCP loading", () => {
       "Turn context",
     );
     expect(JSON.stringify(promptMessages.at(-1))).toContain(
-      "continue &amp; &lt;auth&gt; &amp;lt;literal&amp;gt; &quot;now&quot;",
+      'continue &amp; &lt;auth&gt; &amp;lt;literal&amp;gt; \\"now\\"',
     );
   });
 
