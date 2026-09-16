@@ -66,7 +66,6 @@ import {
 } from "@/chat/scheduled-automations/tasks";
 import type { ScheduledAutomation } from "@/chat/scheduled-automations/types";
 import { githubPlugin } from "@sentry/junior-github";
-import { memoryPlugin } from "@sentry/junior-memory";
 import { sentryPlugin } from "@sentry/junior-sentry";
 import { runPluginHeartbeats } from "@/chat/agent-dispatch/heartbeat";
 import { runScheduledAutomationHeartbeat } from "@/chat/scheduled-automations/heartbeat";
@@ -1549,7 +1548,6 @@ function runtimePluginsForScenario(
     ...(packages.has("@sentry/junior-github")
       ? [githubPlugin({ appPermissions: { deployments: "read" } })]
       : []),
-    ...(packages.has("@sentry/junior-memory") ? [memoryPlugin()] : []),
     ...(packages.has("@sentry/junior-sentry") ? [sentryPlugin()] : []),
   ];
 }

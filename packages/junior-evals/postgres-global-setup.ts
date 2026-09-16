@@ -48,7 +48,7 @@ export default async function setup(
           {
             dir: path.resolve(
               workspaceRoot,
-              "packages/junior-memory/migrations",
+              "packages/junior/memory-migrations",
             ),
             pluginName: "memory",
           },

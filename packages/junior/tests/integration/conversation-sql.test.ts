@@ -458,7 +458,7 @@ ORDER BY conversation_id
     }
   });
 
-  it("creates migrated tables matching the Drizzle schema", async () => {
+  it("creates core migrated tables matching the core Drizzle schema", async () => {
     const fixture = await createLocalJuniorSqlFixture();
 
     try {
@@ -484,12 +484,14 @@ ORDER BY table_name ASC, ordinal_position ASC
         ]);
       }
       const expected = new Map(
-        Object.values(schema).map((table) => [
-          getTableName(table),
-          Object.values(getTableColumns(table))
-            .map((column) => column.name)
-            .sort(),
-        ]),
+        Object.values(schema)
+          .filter((table) => !getTableName(table).startsWith("junior_memory_"))
+          .map((table) => [
+            getTableName(table),
+            Object.values(getTableColumns(table))
+              .map((column) => column.name)
+              .sort(),
+          ]),
       );
 
       for (const columns of actual.values()) columns.sort();

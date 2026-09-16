@@ -812,9 +812,9 @@ describe("createApp plugin config", () => {
       pluginSet: defineJuniorPlugins([
         defineJuniorPlugin({
           manifest: {
-            name: "memory",
-            displayName: "Memory",
-            description: "Memory plugin",
+            name: "demo-api",
+            displayName: "Demo API",
+            description: "Demo API plugin",
           },
           hooks: {
             apiRoutes() {
@@ -824,13 +824,13 @@ describe("createApp plugin config", () => {
         }),
       ]),
       plugins: undefined,
-      pluginRuntimeRegistrations: ["memory"],
+      pluginRuntimeRegistrations: ["demo-api"],
     }));
 
     const app = await createApp();
 
     const response = await app.fetch(
-      new Request("http://localhost/api/plugins/memory"),
+      new Request("http://localhost/api/plugins/demo-api"),
     );
 
     expect(response.status).toBe(200);

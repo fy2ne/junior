@@ -21,6 +21,11 @@ import {
   validatePluginRegistrations,
 } from "@/chat/plugins/validation";
 import { loadAppPluginSet } from "@/plugin-module";
+import { createMemoryRegistration } from "@/chat/memory/registration";
+import {
+  installedRuntimeRegistrations,
+  legacyMemoryOptions,
+} from "@/chat/memory/runtime";
 import {
   pluginCliRegistrationsFromPluginSet,
   pluginCatalogConfigFromPluginSet,
@@ -226,21 +231,36 @@ async function loadPluginRegistrations(args: {
   runtimePlugins: PluginRegistration[];
 }> {
   const pluginSet = args.pluginSet;
+  const memory = createMemoryRegistration();
   if (!pluginSet) {
-    return { cliPlugins: [], runtimePlugins: [] };
+    const cliPlugins = [memory];
+    args.validateConfiguredCommands?.(cliPlugins);
+    setPlugins([], {});
+    return { cliPlugins, runtimePlugins: [] };
   }
 
-  const cliPlugins = pluginCliRegistrationsFromPluginSet(pluginSet);
-  const runtimePlugins = pluginRuntimeRegistrationsFromPluginSet(pluginSet);
+  const cliPlugins = [
+    memory,
+    ...pluginCliRegistrationsFromPluginSet(pluginSet),
+  ];
+  const configuredRuntimePlugins =
+    pluginRuntimeRegistrationsFromPluginSet(pluginSet);
+  const runtimePlugins = installedRuntimeRegistrations(
+    configuredRuntimePlugins,
+  );
   const pluginConfig = pluginCatalogConfigFromPluginSet(pluginSet);
   validatePlugins(runtimePlugins);
   const previousPluginCatalogConfig =
     pluginCatalogRuntime.setConfig(pluginConfig);
   try {
-    validatePluginRegistrations(pluginSet.registrations);
-    validatePluginEgressCredentialHooks(pluginSet.registrations);
+    validatePluginRegistrations(
+      installedRuntimeRegistrations(pluginSet.registrations),
+    );
+    validatePluginEgressCredentialHooks(
+      installedRuntimeRegistrations(pluginSet.registrations),
+    );
     args.validateConfiguredCommands?.(cliPlugins);
-    setPlugins(runtimePlugins);
+    setPlugins(runtimePlugins, legacyMemoryOptions(pluginSet.registrations));
     return { cliPlugins, runtimePlugins };
   } catch (error) {
     pluginCatalogRuntime.setConfig(previousPluginCatalogConfig);

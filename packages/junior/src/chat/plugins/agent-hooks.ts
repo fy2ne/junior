@@ -58,6 +58,10 @@ import { workspaceRepoCheckoutPath } from "@/chat/workspaces/checkout-path";
 import { listWorkspaceNamesByRepository } from "@/chat/workspaces/store";
 import { createCodeChangePublisher } from "@/chat/code/publisher";
 import { coreTaskRegistrations } from "@/chat/briefs/registration";
+import {
+  createMemoryRegistration,
+  type MemoryOptions,
+} from "@/chat/memory/registration";
 
 /** Signal that a plugin intentionally denied a tool execution. */
 export class PluginHookDeniedError extends Error {
@@ -418,10 +422,16 @@ export function validatePlugins(plugins: PluginRegistration[]): void {
 /** Replace runtime hook plugins and return the previous list for rollback. */
 export function setPlugins(
   nextPlugins: PluginRegistration[],
+  memoryOptions?: MemoryOptions,
 ): PluginRegistration[] {
   validatePlugins(nextPlugins);
-  const previous = registeredPlugins;
-  registeredPlugins = [...nextPlugins].sort((left, right) =>
+  const previous = registeredPlugins.filter(
+    (plugin) => plugin.manifest.name !== "memory",
+  );
+  registeredPlugins = [
+    ...(memoryOptions ? [createMemoryRegistration(memoryOptions)] : []),
+    ...nextPlugins,
+  ].sort((left, right) =>
     left.manifest.name.localeCompare(right.manifest.name),
   );
   return previous;
@@ -429,6 +439,13 @@ export function setPlugins(
 
 /** Return the current runtime hook plugins without exposing mutable state. */
 export function getPlugins(): PluginRegistration[] {
+  return registeredPlugins.filter(
+    (plugin) => plugin.manifest.name !== "memory",
+  );
+}
+
+/** Return installed plugins plus core Memory for runtime contribution surfaces. */
+export function getRuntimePlugins(): PluginRegistration[] {
   return [...registeredPlugins];
 }
 
@@ -462,7 +479,7 @@ export async function getPluginSystemPromptContributions(
 ): Promise<PluginPromptContributionContext[]> {
   const contributions: PluginPromptContributionContext[] = [];
   let totalChars = 0;
-  for (const plugin of getPlugins()) {
+  for (const plugin of getRuntimePlugins()) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.systemPrompt;
     if (!hook) {
@@ -532,7 +549,7 @@ export async function getPluginUserPromptContributions(args: {
   const contributions: PluginPromptContributionContext[] = [];
   let totalChars = 0;
   let totalContextBytes = 0;
-  for (const plugin of getPlugins()) {
+  for (const plugin of getRuntimePlugins()) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.userPrompt;
     if (!hook) {
@@ -612,7 +629,7 @@ export function getPluginTools(
   sandbox: PluginSandbox = createSandboxCapability(context.workspace),
 ): Record<string, AnyToolDefinition> {
   const tools: Record<string, AnyToolDefinition> = {};
-  for (const plugin of getPlugins()) {
+  for (const plugin of getRuntimePlugins()) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.tools;
     if (!hook) {
@@ -872,7 +889,7 @@ export function getPluginRoutes(options: {
   const seen = new Set<string>();
   const methodsByPath = new Map<string, Set<PluginRouteMethod>>();
 
-  for (const plugin of getPlugins()) {
+  for (const plugin of getRuntimePlugins()) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.routes;
     if (!hook) {
@@ -991,7 +1008,7 @@ export function getPluginRoutes(options: {
 export function getPluginApiRoutes(): PluginApiRouteRegistration[] {
   const routes: PluginApiRouteRegistration[] = [];
 
-  for (const plugin of getPlugins()) {
+  for (const plugin of getRuntimePlugins()) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.apiRoutes;
     if (!hook) {
@@ -1356,7 +1373,7 @@ export async function getPluginOperationalReports(
   nowMs: number,
 ): Promise<PluginOperationalReport[]> {
   const reports: PluginOperationalReport[] = [];
-  for (const plugin of [...coreTaskRegistrations(), ...getPlugins()]) {
+  for (const plugin of [...coreTaskRegistrations(), ...getRuntimePlugins()]) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.operationalReport;
     if (!hook) {

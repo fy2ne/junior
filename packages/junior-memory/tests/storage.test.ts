@@ -26,31 +26,37 @@ import {
 import { Command, CommanderError } from "commander";
 import { eq } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
-import * as memorySqlSchema from "../src/db/schema";
+import * as memorySqlSchema from "@sentry/junior/src/db/schema/memory";
 import {
   conversationMemoryListResponseSchema,
   createMemoryApi,
   memoryApiSchema,
   memoryDashboardResponseSchema,
   memoryListResponseSchema,
-} from "../src/api";
-import { createMemoryAgent, type CreateMemoryRequest } from "../src/agent";
-import { createMemoryCliCommand } from "../src/cli";
-import { memoryPlugin } from "../src/plugin";
-import { processMemorySession } from "../src/process-session";
+} from "@sentry/junior/src/chat/memory/api";
+import {
+  createMemoryAgent,
+  type CreateMemoryRequest,
+} from "@sentry/junior/src/chat/memory/agent";
+import { createMemoryCliCommand } from "@sentry/junior/src/chat/memory/cli";
+import { createMemoryRegistration as memoryPlugin } from "@sentry/junior/src/chat/memory/registration";
+import { processMemorySession } from "@sentry/junior/src/chat/memory/process-session";
 import {
   createMemoryArchiveTool,
   createMemoryCreateTool,
   createMemoryListTool,
   createMemorySearchTool,
   type MemoryReviewer,
-} from "../src/tools";
-import { listMemories } from "../src/viewer";
-import { createMemoryStore, type MemoryDb } from "../src/store";
+} from "@sentry/junior/src/chat/memory/tools";
+import { listMemories } from "@sentry/junior/src/chat/memory/viewer";
+import {
+  createMemoryStore,
+  type MemoryDb,
+} from "@sentry/junior/src/chat/memory/store";
 import type {
   MemorySupersessionDecider,
   MemorySupersessionInput,
-} from "../src/store";
+} from "@sentry/junior/src/chat/memory/store";
 const TEST_NOW_MS = Date.parse("2026-06-19T12:00:00.000Z");
 const TEST_EMBEDDING_DIMENSIONS = 1536;
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -188,7 +194,7 @@ async function createMemoryFixture(): Promise<MemoryFixture> {
       vector: pgliteVectorExtension,
     },
   });
-  const migrationsDir = resolve(__dirname, "../migrations");
+  const migrationsDir = resolve(__dirname, "../../junior/memory-migrations");
   const migrations = (await readdir(migrationsDir))
     .filter((filename) => filename.endsWith(".sql"))
     .sort();

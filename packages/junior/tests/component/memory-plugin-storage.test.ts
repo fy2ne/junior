@@ -1,11 +1,8 @@
 import path from "node:path";
 import { readdirSync } from "node:fs";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
-import {
-  memoryPlugin,
-  createMemoryStore,
-  type MemoryDb,
-} from "@sentry/junior-memory";
+import { createMemoryStore, type MemoryDb } from "@/chat/memory/store";
+import { createMemoryRegistration as memoryPlugin } from "@/chat/memory/registration";
 import { defineJuniorPlugins } from "@/plugins";
 import { getPluginTools, setPlugins } from "@/chat/plugins/agent-hooks";
 import { migratePluginSchemas } from "@/chat/plugins/migrations";
@@ -87,7 +84,7 @@ afterAll(() => {
 });
 
 function memoryMigrationsDir(): string {
-  return path.resolve(process.cwd(), "../junior-memory/migrations");
+  return path.resolve(process.cwd(), "memory-migrations");
 }
 
 function memoryMigrationFiles(): string[] {
@@ -378,14 +375,12 @@ WHERE indexname = 'junior_memory_memories_search_idx'
 
   it("reads public memory everywhere and private memory only for its User", async () => {
     const fixture = await createLocalJuniorSqlFixture();
-    const plugin = memoryPlugin();
-    setPlugins([plugin]);
+    setPlugins([], {});
     NEON.sql = fixture.sql;
 
     try {
       await migrateSchema(fixture.sql);
       await migrateMemorySchema(fixture);
-      // @ts-expect-error non-overlapping boundary cast; rule forbids as-unknown-as chains
       const db = fixture.sql.db() as MemoryDb;
       const viewerConversationId = "slack:D123:1718800001.000000";
       const viewer = await recordPrivateConversation(fixture, {
@@ -485,7 +480,7 @@ WHERE indexname = 'junior_memory_memories_search_idx'
 
   it("registers memory tools with runtime-provided plugin DB access", async () => {
     const fixture = await createLocalJuniorSqlFixture();
-    setPlugins([memoryPlugin()]);
+    setPlugins([], {});
     NEON.sql = fixture.sql;
 
     try {
@@ -512,17 +507,13 @@ WHERE indexname = 'junior_memory_memories_search_idx'
         nowMs: Date.parse("2026-08-21T12:00:00.000Z"),
         userId: actor.userId,
       });
-      const store = createMemoryStore(
-        // @ts-expect-error non-overlapping boundary cast; rule forbids as-unknown-as chains
-        fixture.sql.db() as MemoryDb,
-        {
-          conversationId,
-          locationId: userContext.locationId,
-          actor,
-          source,
-          userId: userContext.user.id,
-        },
-      );
+      const store = createMemoryStore(fixture.sql.db() as MemoryDb, {
+        conversationId,
+        locationId: userContext.locationId,
+        actor,
+        source,
+        userId: userContext.user.id,
+      });
       await store.createMemory({
         content: "I prefer host-wired personal recall.",
         idempotencyKey: "component-memory-personal",

@@ -146,19 +146,23 @@ async function configureLocalChatPlugins(
     catalogRuntimeModule,
     validationModule,
     databaseModule,
+    memoryRuntimeModule,
   ] = await Promise.all([
     import("@/plugins"),
     import("@/chat/plugins/agent-hooks"),
     import("@/chat/plugins/catalog-runtime"),
     import("@/chat/plugins/validation"),
     import("@/chat/db"),
+    import("@/chat/memory/runtime"),
   ]);
   const resolvedPluginSet =
     pluginSet === undefined
       ? await loadLocalPluginSet()
       : (pluginSet ?? undefined);
-  const plugins =
+  const configuredPlugins =
     pluginsModule.pluginRuntimeRegistrationsFromPluginSet(resolvedPluginSet);
+  const plugins =
+    memoryRuntimeModule.installedRuntimeRegistrations(configuredPlugins);
   const pluginConfig = resolvedPluginSet
     ? pluginsModule.pluginCatalogConfigFromPluginSet(resolvedPluginSet)
     : pluginsModule.pluginCatalogConfigFromEnv();
@@ -171,14 +175,23 @@ async function configureLocalChatPlugins(
     if (shouldValidatePluginCatalog) {
       catalogRuntimeModule.pluginCatalogRuntime.getSignature();
       validationModule.validatePluginRegistrations(
-        resolvedPluginSet?.registrations ?? [],
+        memoryRuntimeModule.installedRuntimeRegistrations(
+          resolvedPluginSet?.registrations ?? [],
+        ),
       );
       validationModule.validatePluginEgressCredentialHooks(
-        resolvedPluginSet?.registrations ?? [],
+        memoryRuntimeModule.installedRuntimeRegistrations(
+          resolvedPluginSet?.registrations ?? [],
+        ),
       );
     }
     databaseModule.getDb();
-    agentHooksModule.setPlugins(plugins);
+    agentHooksModule.setPlugins(
+      plugins,
+      memoryRuntimeModule.legacyMemoryOptions(
+        resolvedPluginSet?.registrations ?? [],
+      ) ?? {},
+    );
   } catch (error) {
     catalogRuntimeModule.pluginCatalogRuntime.setConfig(
       previousPluginCatalogConfig,
