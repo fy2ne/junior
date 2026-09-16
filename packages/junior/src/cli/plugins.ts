@@ -22,6 +22,10 @@ import {
 } from "@/chat/plugins/validation";
 import { loadAppPluginSet } from "@/plugin-module";
 import {
+  assertNoCoreFeatureNameCollisions,
+  runtimeFeatureRegistrations,
+} from "@/chat/core-features/registration";
+import {
   pluginCliRegistrationsFromPluginSet,
   pluginCatalogConfigFromPluginSet,
   pluginRuntimeRegistrationsFromPluginSet,
@@ -226,11 +230,15 @@ async function loadPluginRegistrations(args: {
   runtimePlugins: PluginRegistration[];
 }> {
   const pluginSet = args.pluginSet;
+  const cliPlugins = runtimeFeatureRegistrations(
+    pluginCliRegistrationsFromPluginSet(pluginSet),
+  ).filter((registration) => registration.cli);
   if (!pluginSet) {
-    return { cliPlugins: [], runtimePlugins: [] };
+    args.validateConfiguredCommands?.(cliPlugins);
+    return { cliPlugins, runtimePlugins: [] };
   }
 
-  const cliPlugins = pluginCliRegistrationsFromPluginSet(pluginSet);
+  assertNoCoreFeatureNameCollisions(pluginSet.registrations);
   const runtimePlugins = pluginRuntimeRegistrationsFromPluginSet(pluginSet);
   const pluginConfig = pluginCatalogConfigFromPluginSet(pluginSet);
   validatePlugins(runtimePlugins);

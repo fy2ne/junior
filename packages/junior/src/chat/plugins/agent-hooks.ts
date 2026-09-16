@@ -57,7 +57,10 @@ import { z } from "zod";
 import { workspaceRepoCheckoutPath } from "@/chat/workspaces/checkout-path";
 import { listWorkspaceNamesByRepository } from "@/chat/workspaces/store";
 import { createCodeChangePublisher } from "@/chat/code/publisher";
-import { coreTaskRegistrations } from "@/chat/briefs/registration";
+import {
+  assertNoCoreFeatureNameCollisions,
+  runtimeFeatureRegistrations,
+} from "@/chat/core-features/registration";
 
 /** Signal that a plugin intentionally denied a tool execution. */
 export class PluginHookDeniedError extends Error {
@@ -382,6 +385,7 @@ function logInvalidPromptContributions(args: {
 
 /** Validate plugin identity before it can affect process-wide hooks. */
 export function validatePlugins(plugins: PluginRegistration[]): void {
+  assertNoCoreFeatureNameCollisions(plugins);
   const seen = new Set<string>();
   for (const plugin of plugins) {
     const name = plugin.manifest.name;
@@ -462,7 +466,7 @@ export async function getPluginSystemPromptContributions(
 ): Promise<PluginPromptContributionContext[]> {
   const contributions: PluginPromptContributionContext[] = [];
   let totalChars = 0;
-  for (const plugin of getPlugins()) {
+  for (const plugin of runtimeFeatureRegistrations(getPlugins())) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.systemPrompt;
     if (!hook) {
@@ -532,7 +536,7 @@ export async function getPluginUserPromptContributions(args: {
   const contributions: PluginPromptContributionContext[] = [];
   let totalChars = 0;
   let totalContextBytes = 0;
-  for (const plugin of getPlugins()) {
+  for (const plugin of runtimeFeatureRegistrations(getPlugins())) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.userPrompt;
     if (!hook) {
@@ -612,7 +616,7 @@ export function getPluginTools(
   sandbox: PluginSandbox = createSandboxCapability(context.workspace),
 ): Record<string, AnyToolDefinition> {
   const tools: Record<string, AnyToolDefinition> = {};
-  for (const plugin of getPlugins()) {
+  for (const plugin of runtimeFeatureRegistrations(getPlugins())) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.tools;
     if (!hook) {
@@ -872,7 +876,7 @@ export function getPluginRoutes(options: {
   const seen = new Set<string>();
   const methodsByPath = new Map<string, Set<PluginRouteMethod>>();
 
-  for (const plugin of getPlugins()) {
+  for (const plugin of runtimeFeatureRegistrations(getPlugins())) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.routes;
     if (!hook) {
@@ -991,7 +995,7 @@ export function getPluginRoutes(options: {
 export function getPluginApiRoutes(): PluginApiRouteRegistration[] {
   const routes: PluginApiRouteRegistration[] = [];
 
-  for (const plugin of getPlugins()) {
+  for (const plugin of runtimeFeatureRegistrations(getPlugins())) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.apiRoutes;
     if (!hook) {
@@ -1356,7 +1360,7 @@ export async function getPluginOperationalReports(
   nowMs: number,
 ): Promise<PluginOperationalReport[]> {
   const reports: PluginOperationalReport[] = [];
-  for (const plugin of [...coreTaskRegistrations(), ...getPlugins()]) {
+  for (const plugin of runtimeFeatureRegistrations(getPlugins())) {
     const pluginName = plugin.manifest.name;
     const hook = plugin.hooks?.operationalReport;
     if (!hook) {

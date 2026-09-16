@@ -15,11 +15,12 @@ import { getDb } from "@/chat/db";
 import { createPluginLogger } from "@/chat/plugins/logging";
 import { resolveViewerUser } from "@/chat/plugins/viewer";
 import { getPlugins } from "@/chat/plugins/agent-hooks";
+import { runtimeFeatureRegistrations } from "@/chat/core-features/registration";
 
 /** List safe navigation metadata for registered plugin user pages. */
 export function readPluginUserPageLinks(): PluginUserPageLink[] {
   return pluginUserPageLinksSchema.parse(
-    getPlugins().flatMap((plugin) =>
+    runtimeFeatureRegistrations(getPlugins()).flatMap((plugin) =>
       (plugin.userPages ?? []).map((page) => ({
         description: page.description,
         id: page.id,
@@ -50,7 +51,7 @@ export async function readPluginUserPage(input: {
   pluginName: string;
   query: PluginUserPageInput;
 }): Promise<PluginUserPageContent | undefined> {
-  const plugin = getPlugins().find(
+  const plugin = runtimeFeatureRegistrations(getPlugins()).find(
     (candidate) => candidate.manifest.name === input.pluginName,
   );
   const page = plugin?.userPages?.find(
