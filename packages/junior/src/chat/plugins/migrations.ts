@@ -3,7 +3,7 @@ import { readMigrationFiles, type MigrationMeta } from "drizzle-orm/migrator";
 import type { JuniorSqlMigrationExecutor } from "@/db/db";
 import { isPostgresErrorCode } from "@/db/postgres-error";
 
-export interface PluginMigrationRoot {
+interface PluginMigrationRoot {
   /** Absolute path to the plugin's Drizzle migrations directory. */
   dir: string;
   pluginName: string;

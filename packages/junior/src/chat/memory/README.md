@@ -43,8 +43,8 @@ exported types, tools, and tests are authoritative.
 
 ## Storage
 
-- The Drizzle schema in `../../db/schema/memory.ts` and the migrations in
-  `../../../memory-migrations` define the database contract.
+- The Drizzle schema in `../../db/schema/memory.ts` and the core migrations in
+  `../../../migrations` define the database contract.
 - Records retain provenance, the optional origin `conversation_id`, lifecycle
   status, supersession relationships, and timestamps needed for review and deletion.
 - Embeddings are derived indexes, not independent memory authority.
@@ -99,6 +99,6 @@ exported types, tools, and tests are authoritative.
 - Automatic recall uses a fixed cosine distance cutoff of `0.45` (for
   `text-embedding-3-small`). Explicit search does not apply that cutoff.
 - Generate Memory schema changes with
-  `pnpm --filter @sentry/junior db:generate:memory --name <migration_name>`.
+  `pnpm --filter @sentry/junior db:generate --name <migration_name>`.
 
 Follow `../../../../../policies/data-redaction.md` and `../../../../../policies/security.md`.

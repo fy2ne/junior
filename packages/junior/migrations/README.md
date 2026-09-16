@@ -1,8 +1,7 @@
 # SQL migrations
 
-`src/db/migration-schema.ts` is the Drizzle schema entrypoint. This directory
-is the append-only history for core tables other than Memory. Memory uses
-`memory-migrations` and `drizzle.memory.config.ts`.
+`src/db/schema.ts` is the Drizzle schema entrypoint. This directory is the
+append-only history used to bring an existing database to that schema.
 
 `junior upgrade` applies core migrations and enabled plugins' packaged Drizzle
 migrations. Core SQL is recorded in `drizzle.__drizzle_junior_core`. Reruns

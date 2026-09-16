@@ -40,20 +40,15 @@ async function createMemoryFixture(): Promise<MemoryFixture> {
       vector: pgliteVectorExtension,
     },
   });
-  const migrations = (
-    await readdir(resolve(__dirname, "../../junior/memory-migrations"))
-  )
-    .filter((filename) => filename.endsWith(".sql"))
-    .sort();
-  for (const migration of migrations) {
-    await fixture.execute(
-      await readFile(
-        resolve(__dirname, "../../junior/memory-migrations", migration),
-        "utf8",
-      ),
-    );
+  const migrationsDir = resolve(__dirname, "../../junior/migrations");
+  for (const filename of await readdir(migrationsDir)) {
+    const migration = await readFile(resolve(migrationsDir, filename), "utf8");
+    if (migration.includes("Adopt the former Memory plugin tables")) {
+      await fixture.execute(migration);
+      return fixture;
+    }
   }
-  return fixture;
+  throw new Error("Memory adoption migration not found");
 }
 
 function localContext() {

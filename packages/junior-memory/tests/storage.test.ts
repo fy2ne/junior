@@ -194,17 +194,15 @@ async function createMemoryFixture(): Promise<MemoryFixture> {
       vector: pgliteVectorExtension,
     },
   });
-  const migrationsDir = resolve(__dirname, "../../junior/memory-migrations");
-  const migrations = (await readdir(migrationsDir))
-    .filter((filename) => filename.endsWith(".sql"))
-    .sort();
-  for (const migrationFile of migrations) {
-    const migration = await readFile(resolve(migrationsDir, migrationFile), {
-      encoding: "utf8",
-    });
-    await fixture.execute(migration);
+  const migrationsDir = resolve(__dirname, "../../junior/migrations");
+  for (const filename of await readdir(migrationsDir)) {
+    const migration = await readFile(resolve(migrationsDir, filename), "utf8");
+    if (migration.includes("Adopt the former Memory plugin tables")) {
+      await fixture.execute(migration);
+      return fixture;
+    }
   }
-  return fixture;
+  throw new Error("Memory adoption migration not found");
 }
 
 async function installViewerCoreTables(fixture: MemoryFixture): Promise<void> {

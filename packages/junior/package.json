@@ -53,8 +53,7 @@
     "dist",
     "bin",
     "migrations",
-    "skills",
-    "memory-migrations"
+    "skills"
   ],
   "scripts": {
     "prepare": "pnpm run build",
@@ -62,9 +61,8 @@
     "build": "tsdown && tsdown --config tsdown.memory.config.ts",
     "acp:smoke": "pnpm exec tsx scripts/acp-smoke.ts",
     "db:generate": "pnpm exec drizzle-kit generate --config drizzle.config.ts",
-    "db:generate:memory": "pnpm exec drizzle-kit generate --config drizzle.memory.config.ts",
-    "lint": "oxlint --config .oxlintrc.json --deny-warnings src tests scripts bin drizzle.config.ts drizzle.memory.config.ts tsdown.config.ts tsdown.memory.config.ts && depcruise --config .dependency-cruiser.mjs src/chat",
-    "lint:fix": "oxlint --config .oxlintrc.json --deny-warnings --fix src tests scripts bin drizzle.config.ts drizzle.memory.config.ts tsdown.config.ts tsdown.memory.config.ts",
+    "lint": "oxlint --config .oxlintrc.json --deny-warnings src tests scripts bin drizzle.config.ts tsdown.config.ts tsdown.memory.config.ts && depcruise --config .dependency-cruiser.mjs src/chat",
+    "lint:fix": "oxlint --config .oxlintrc.json --deny-warnings --fix src tests scripts bin drizzle.config.ts tsdown.config.ts tsdown.memory.config.ts",
     "test": "vitest run --maxWorkers=4",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
