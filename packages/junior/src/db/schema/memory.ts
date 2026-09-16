@@ -2,7 +2,7 @@
  * Drizzle source of truth for core Memory SQL migrations.
  *
  * Update this schema first, then regenerate packaged migrations with
- * `pnpm --filter @sentry/junior db:generate`.
+ * `pnpm --filter @sentry/junior db:generate:memory`.
  */
 import { sql } from "drizzle-orm";
 import {

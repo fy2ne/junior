@@ -23,7 +23,7 @@ import {
  * more than one Actor does not store any preference.
  */
 
-const memoryPluginOverrides = {};
+const memoryPluginOverrides = { memory: {} };
 const memoryTeamId = "TEVAL";
 
 const ALICE = {

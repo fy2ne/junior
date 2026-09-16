@@ -13,7 +13,7 @@ import {
 } from "@sentry/junior/memory";
 import { TEST_USER_ID } from "@junior-tests/fixtures/slack/factories/ids";
 
-export const memoryPluginOverrides = {};
+export const memoryPluginOverrides = { memory: {} };
 const memoryTeamId = "TEVAL";
 const actorUserId = TEST_USER_ID;
 const memoryJudgeModelId = resolveGatewayModel("openai/gpt-5.4").id;
