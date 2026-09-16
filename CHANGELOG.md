@@ -1,4 +1,19 @@
 # Changelog
+## 0.217.0
+
+### New Features ✨
+
+- (chat) Retain open plans through compaction by @sentry-junior in [#1865](https://github.com/getsentry/junior/pull/1865)
+
+### Bug Fixes 🐛
+
+- (chat) Keep handoff history exact by @sentry-junior in [#1869](https://github.com/getsentry/junior/pull/1869)
+- (slack) Clarify auth link location by @sentry-junior in [#1857](https://github.com/getsentry/junior/pull/1857)
+
+### Internal Changes 🔧
+
+- (chat) Rename updatePlan tool by @sentry-junior in [#1867](https://github.com/getsentry/junior/pull/1867)
+
 ## 0.216.0
 
 ### New Features ✨
