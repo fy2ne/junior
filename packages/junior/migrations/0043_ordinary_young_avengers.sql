@@ -95,7 +95,7 @@ WHERE scope = 'conversation'
 CREATE TEMP TABLE junior_memory_legacy_owners (
 	id text PRIMARY KEY,
 	user_id text NOT NULL
-) ON COMMIT DROP;--> statement-breakpoint
+);--> statement-breakpoint
 DO $$
 BEGIN
 	IF to_regclass('junior_identities') IS NOT NULL THEN
@@ -132,7 +132,7 @@ BEGIN
 	END IF;
 END
 $$;--> statement-breakpoint
-CREATE TEMP TABLE junior_memory_scope_targets ON COMMIT DROP AS
+CREATE TEMP TABLE junior_memory_scope_targets AS
 SELECT
 	memory.id,
 	CASE
