@@ -25,6 +25,7 @@ import { createMemoryRegistration } from "@/chat/memory/registration";
 import {
   installedRuntimeRegistrations,
   legacyMemoryOptions,
+  memoryRuntimeRegistrations,
 } from "@/chat/memory/runtime";
 import {
   pluginCliRegistrationsFromPluginSet,
@@ -226,17 +227,14 @@ function validateConfiguredPluginCommands(plugins: PluginRegistration[]): void {
 async function loadPluginRegistrations(args: {
   pluginSet?: JuniorPluginSet;
   validateConfiguredCommands?: (plugins: PluginRegistration[]) => void;
-}): Promise<{
-  cliPlugins: PluginRegistration[];
-  runtimePlugins: PluginRegistration[];
-}> {
+}): Promise<PluginRegistration[]> {
   const pluginSet = args.pluginSet;
   const memory = createMemoryRegistration();
   if (!pluginSet) {
     const cliPlugins = [memory];
     args.validateConfiguredCommands?.(cliPlugins);
-    setPlugins([], {});
-    return { cliPlugins, runtimePlugins: [] };
+    setPlugins([memory]);
+    return cliPlugins;
   }
 
   const cliPlugins = [
@@ -260,8 +258,13 @@ async function loadPluginRegistrations(args: {
       installedRuntimeRegistrations(pluginSet.registrations),
     );
     args.validateConfiguredCommands?.(cliPlugins);
-    setPlugins(runtimePlugins, legacyMemoryOptions(pluginSet.registrations));
-    return { cliPlugins, runtimePlugins };
+    setPlugins(
+      memoryRuntimeRegistrations(
+        runtimePlugins,
+        legacyMemoryOptions(pluginSet.registrations),
+      ),
+    );
+    return cliPlugins;
   } catch (error) {
     pluginCatalogRuntime.setConfig(previousPluginCatalogConfig);
     throw error;
@@ -276,7 +279,7 @@ export async function loadCliPluginCommands(
     pluginSet === undefined
       ? await loadCliPluginSet()
       : (pluginSet ?? undefined);
-  const { cliPlugins } = await loadPluginRegistrations({
+  const cliPlugins = await loadPluginRegistrations({
     pluginSet: resolvedPluginSet,
     validateConfiguredCommands: validateConfiguredPluginCommands,
   });

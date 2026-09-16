@@ -161,8 +161,16 @@ async function configureLocalChatPlugins(
       : (pluginSet ?? undefined);
   const configuredPlugins =
     pluginsModule.pluginRuntimeRegistrationsFromPluginSet(resolvedPluginSet);
-  const plugins =
-    memoryRuntimeModule.installedRuntimeRegistrations(configuredPlugins);
+  const configuredRegistrations =
+    memoryRuntimeModule.installedRuntimeRegistrations(
+      resolvedPluginSet?.registrations ?? [],
+    );
+  const plugins = memoryRuntimeModule.memoryRuntimeRegistrations(
+    configuredPlugins,
+    memoryRuntimeModule.legacyMemoryOptions(
+      resolvedPluginSet?.registrations ?? [],
+    ),
+  );
   const pluginConfig = resolvedPluginSet
     ? pluginsModule.pluginCatalogConfigFromPluginSet(resolvedPluginSet)
     : pluginsModule.pluginCatalogConfigFromEnv();
@@ -174,24 +182,13 @@ async function configureLocalChatPlugins(
   try {
     if (shouldValidatePluginCatalog) {
       catalogRuntimeModule.pluginCatalogRuntime.getSignature();
-      validationModule.validatePluginRegistrations(
-        memoryRuntimeModule.installedRuntimeRegistrations(
-          resolvedPluginSet?.registrations ?? [],
-        ),
-      );
+      validationModule.validatePluginRegistrations(configuredRegistrations);
       validationModule.validatePluginEgressCredentialHooks(
-        memoryRuntimeModule.installedRuntimeRegistrations(
-          resolvedPluginSet?.registrations ?? [],
-        ),
+        configuredRegistrations,
       );
     }
     databaseModule.getDb();
-    agentHooksModule.setPlugins(
-      plugins,
-      memoryRuntimeModule.legacyMemoryOptions(
-        resolvedPluginSet?.registrations ?? [],
-      ) ?? {},
-    );
+    agentHooksModule.setPlugins(plugins);
   } catch (error) {
     catalogRuntimeModule.pluginCatalogRuntime.setConfig(
       previousPluginCatalogConfig,

@@ -3,6 +3,7 @@ import { readdirSync } from "node:fs";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryStore, type MemoryDb } from "@/chat/memory/store";
 import { createMemoryRegistration as memoryPlugin } from "@/chat/memory/registration";
+import { memoryRuntimeRegistrations } from "@/chat/memory/runtime";
 import { defineJuniorPlugins } from "@/plugins";
 import { getPluginTools, setPlugins } from "@/chat/plugins/agent-hooks";
 import { migratePluginSchemas } from "@/chat/plugins/migrations";
@@ -375,7 +376,7 @@ WHERE indexname = 'junior_memory_memories_search_idx'
 
   it("reads public memory everywhere and private memory only for its User", async () => {
     const fixture = await createLocalJuniorSqlFixture();
-    setPlugins([], {});
+    setPlugins(memoryRuntimeRegistrations([]));
     NEON.sql = fixture.sql;
 
     try {
@@ -480,7 +481,7 @@ WHERE indexname = 'junior_memory_memories_search_idx'
 
   it("registers memory tools with runtime-provided plugin DB access", async () => {
     const fixture = await createLocalJuniorSqlFixture();
-    setPlugins([], {});
+    setPlugins(memoryRuntimeRegistrations([]));
     NEON.sql = fixture.sql;
 
     try {

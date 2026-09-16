@@ -1,5 +1,5 @@
 import type { PluginRegistration } from "@sentry/junior-plugin-api";
-import type { MemoryOptions } from "./registration";
+import { createMemoryRegistration, type MemoryOptions } from "./registration";
 
 const LEGACY_MEMORY_PACKAGE = "@sentry/junior-memory";
 type LegacyMemoryRegistration = PluginRegistration & {
@@ -37,4 +37,15 @@ export function installedRuntimeRegistrations(
     if (isLegacyMemoryRegistration(plugin)) return false;
     throw new Error('Plugin registration name "memory" is reserved by core');
   });
+}
+
+/** Add core Memory to installed runtime registrations. */
+export function memoryRuntimeRegistrations(
+  plugins: PluginRegistration[],
+  options: MemoryOptions = {},
+): PluginRegistration[] {
+  return [
+    createMemoryRegistration(options),
+    ...installedRuntimeRegistrations(plugins),
+  ];
 }

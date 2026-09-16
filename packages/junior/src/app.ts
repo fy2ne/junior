@@ -97,6 +97,7 @@ import { createAgentRunner } from "@/chat/runtime/agent-runner";
 import {
   installedRuntimeRegistrations,
   legacyMemoryOptions,
+  memoryRuntimeRegistrations,
 } from "@/chat/memory/runtime";
 import { createVercelAttachmentStorage } from "@/chat/attachments/vercel";
 import { publicArtifactGET } from "@/handlers/artifacts";
@@ -694,17 +695,22 @@ export async function createApp(options?: JuniorAppOptions): Promise<Hono> {
   const configuredPlugins = options?.plugins ?? virtualConfig?.pluginSet;
   const configuredRuntimePlugins =
     pluginRuntimeRegistrationsFromPluginSet(configuredPlugins);
-  const plugins = installedRuntimeRegistrations(configuredRuntimePlugins);
-  const memoryOptions =
+  const plugins = memoryRuntimeRegistrations(
+    configuredRuntimePlugins,
     options?.memory ??
-    legacyMemoryOptions(configuredPlugins?.registrations ?? []);
+      legacyMemoryOptions(configuredPlugins?.registrations ?? []) ??
+      {},
+  );
   const pluginConfig = configuredPlugins
     ? pluginCatalogConfigFromPluginSet(configuredPlugins)
     : (virtualConfig?.plugins ?? pluginCatalogConfigFromEnv());
   if (configuredPlugins) {
     validateBuildIncludesPluginPackages(pluginConfig, virtualConfig);
   }
-  validateBuildIncludesPluginRuntimeRegistrations(plugins, virtualConfig);
+  validateBuildIncludesPluginRuntimeRegistrations(
+    configuredRuntimePlugins,
+    virtualConfig,
+  );
   validatePlugins(plugins);
   getDb();
   const shouldValidatePluginCatalog =
@@ -714,7 +720,7 @@ export async function createApp(options?: JuniorAppOptions): Promise<Hono> {
   const previousBotConfig = { ...botConfig };
   const previousPluginCatalogConfig =
     pluginCatalogRuntime.setConfig(pluginConfig);
-  const previousPlugins = setPlugins(plugins, memoryOptions ?? {});
+  const previousPlugins = setPlugins(plugins);
   const previousConfigDefaults = getConfigDefaults();
   const previousSlackReactionConfig = getSlackReactionConfig();
   const previousSandboxResources = getSandboxResourceConfig();
