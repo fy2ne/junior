@@ -15,10 +15,7 @@ import type {
   PluginSystemRuntimeDependency,
   PluginSystemRuntimeDependencyFromUrl,
 } from "./types";
-import {
-  inlineManifestSource,
-  mcpAuthSource,
-} from "./inline-manifest-source";
+import { inlineManifestSource, mcpAuthSource } from "./inline-manifest-source";
 
 const PLUGIN_NAME_RE = /^[a-z][a-z0-9-]*$/;
 const SHORT_CONFIG_KEY_RE = /^[a-z0-9]+(\.[a-z0-9-]+)*$/;
@@ -372,7 +369,11 @@ function manifestConfigPatch(
       setDefined(mcp, "transport", config.mcp.transport);
       setDefined(mcp, "url", config.mcp.url);
       setDefined(mcp, "headers", config.mcp.headers);
-      setDefined(mcp, "auth", config.mcp.auth && mcpAuthSource(config.mcp.auth));
+      setDefined(
+        mcp,
+        "auth",
+        config.mcp.auth && mcpAuthSource(config.mcp.auth),
+      );
       setDefined(mcp, "allowed-tools", config.mcp.allowedTools);
       setDefined(mcp, "wrapped-tools", config.mcp.wrappedTools);
       result.mcp = mcp;
@@ -534,6 +535,23 @@ function assertDeclaredHeaderEnvReferences(
 ): void {
   for (const [key, headerValue] of Object.entries(headers ?? {})) {
     assertDeclaredEnvReferences(headerValue, envVars, `${prefix}.${key}`);
+  }
+}
+
+function assertDeclaredHostSecretEnv(
+  name: string,
+  envVars: Record<string, PluginEnvVarDeclaration>,
+  context: string,
+): void {
+  if (!Object.prototype.hasOwnProperty.call(envVars, name)) {
+    throw new Error(
+      `${context} uses env var ${name} which is not declared in env-vars`,
+    );
+  }
+  if (envVars[name]?.default !== undefined) {
+    throw new Error(
+      `${context} uses env var ${name}, but host secret env vars must not declare defaults`,
+    );
   }
 }
 
@@ -981,6 +999,13 @@ function normalizeMcp(
     envVars,
     `Plugin ${name} mcp.headers`,
   );
+  if (result.data.auth) {
+    assertDeclaredHostSecretEnv(
+      result.data.auth["private-key-env"],
+      envVars,
+      `Plugin ${name} mcp.auth.private-key-env`,
+    );
+  }
 
   return {
     transport: "http",

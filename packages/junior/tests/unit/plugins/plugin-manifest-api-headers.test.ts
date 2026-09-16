@@ -470,6 +470,37 @@ describe("plugin manifest API headers", () => {
     );
   });
 
+  it.each([
+    [
+      "without a declaration",
+      [],
+      "Plugin example mcp.auth.private-key-env uses env var EXAMPLE_MCP_PRIVATE_KEY which is not declared in env-vars",
+    ],
+    [
+      "with a default",
+      ["env-vars:", "  EXAMPLE_MCP_PRIVATE_KEY:", "    default: unsafe"],
+      "Plugin example mcp.auth.private-key-env uses env var EXAMPLE_MCP_PRIVATE_KEY, but host secret env vars must not declare defaults",
+    ],
+  ])("rejects MCP auth private key env vars %s", (_name, envLines, message) => {
+    expect(() =>
+      parsePluginManifest(
+        [
+          "name: example",
+          "display-name: Example",
+          "description: Example MCP access",
+          ...envLines,
+          "mcp:",
+          "  url: https://mcp.example.com/mcp",
+          "  auth:",
+          "    issuer: https://junior.example.com",
+          "    key-id: junior-1",
+          "    private-key-env: EXAMPLE_MCP_PRIVATE_KEY",
+        ].join("\n"),
+        "/tmp/example",
+      ),
+    ).toThrow(message);
+  });
+
   it("rejects command env references that reuse MCP header env vars", () => {
     expect(() =>
       parsePluginManifest(

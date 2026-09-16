@@ -104,6 +104,7 @@ describe("inline plugin manifests", () => {
       name: "linear",
       displayName: "Linear",
       description: "Linear issue tracking",
+      envVars: { LINEAR_MCP_PRIVATE_KEY: {} },
       mcp: {
         transport: "http",
         url: "https://mcp.linear.app/mcp",
