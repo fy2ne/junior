@@ -44,10 +44,10 @@ const inputSchema = z
       .number()
       .int()
       .positive()
-      .max(900)
+      .max(300)
       .optional()
       .describe(
-        "Optional timeout in seconds for the clone operation. Defaults to 300 seconds (5 minutes).",
+        "Optional timeout in seconds for the clone operation. Defaults to 300 seconds (5 minutes), which is the sandbox executor cap.",
       ),
   })
   .strict();

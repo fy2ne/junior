@@ -308,7 +308,7 @@ describe("cloneRepository", () => {
     const tool = createGitHubCloneRepositoryTool(context(run));
 
     const result = await tool.execute!(
-      { repo: "getsentry/junior", timeoutSeconds: 450 },
+      { repo: "getsentry/junior", timeoutSeconds: 250 },
       {} as never,
     );
 
