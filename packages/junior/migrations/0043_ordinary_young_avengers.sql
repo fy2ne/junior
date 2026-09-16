@@ -146,7 +146,7 @@ SELECT
 		WHEN memory.scope = 'conversation'
 			AND memory.source_platform = 'slack'
 			AND memory.scope_key = 'slack:' || split_part(memory.source_key, ':', 2)
-			THEN 'slack:' || split_part(memory.source_key, ':', 2)
+			THEN 'public'
 		WHEN memory.scope = 'personal' AND owner.user_id IS NOT NULL
 			THEN owner.user_id
 		ELSE 'legacy-unowned:' || memory.id

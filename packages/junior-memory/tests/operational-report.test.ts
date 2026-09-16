@@ -42,6 +42,9 @@ async function createMemoryFixture(): Promise<MemoryFixture> {
   });
   const migrationsDir = resolve(__dirname, "../../junior/migrations");
   for (const filename of await readdir(migrationsDir)) {
+    if (!filename.endsWith(".sql")) {
+      continue;
+    }
     const migration = await readFile(resolve(migrationsDir, filename), "utf8");
     if (migration.includes("Adopt the former Memory plugin tables")) {
       await fixture.execute(migration);

@@ -271,7 +271,7 @@ describe("memory plugin host wiring", () => {
           id: "legacy-memory",
           kind: "procedure",
           scope: "public",
-          scopeKey: "slack:T123",
+          scopeKey: "public",
         },
       ]);
       await expect(
