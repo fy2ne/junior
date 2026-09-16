@@ -21,10 +21,7 @@ import {
   validatePluginRegistrations,
 } from "@/chat/plugins/validation";
 import { loadAppPluginSet } from "@/plugin-module";
-import {
-  assertNoCoreFeatureNameCollisions,
-  runtimeFeatureRegistrations,
-} from "@/chat/core-features/registration";
+import { runtimeFeatureRegistrations } from "@/chat/core-features/registration";
 import {
   pluginCliRegistrationsFromPluginSet,
   pluginCatalogConfigFromPluginSet,
@@ -238,10 +235,9 @@ async function loadPluginRegistrations(args: {
     return { cliPlugins, runtimePlugins: [] };
   }
 
-  assertNoCoreFeatureNameCollisions(pluginSet.registrations);
   const runtimePlugins = pluginRuntimeRegistrationsFromPluginSet(pluginSet);
   const pluginConfig = pluginCatalogConfigFromPluginSet(pluginSet);
-  validatePlugins(runtimePlugins);
+  validatePlugins(pluginSet.registrations);
   const previousPluginCatalogConfig =
     pluginCatalogRuntime.setConfig(pluginConfig);
   try {

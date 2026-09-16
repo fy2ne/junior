@@ -5,7 +5,7 @@ import type {
   PluginConversationEventValue,
   PluginRegistration,
 } from "@sentry/junior-plugin-api";
-import { runtimeFeatureRegistrations } from "@/chat/core-features/registration";
+import { allCoreFeatureRegistrations } from "@/chat/core-features/registration";
 import { getConversationEventStore } from "@/chat/db";
 import { getPlugins } from "./agent-hooks";
 
@@ -80,9 +80,9 @@ export function renderPluginConversationEvent(args: {
   namespace: string;
   version: number;
 }): ConversationEventPresentation | undefined {
-  const plugin = runtimeFeatureRegistrations(getPlugins(), {
-    includeDisabled: true,
-  }).find((candidate) => candidate.manifest.name === args.namespace);
+  const plugin = [...allCoreFeatureRegistrations(), ...getPlugins()].find(
+    (candidate) => candidate.manifest.name === args.namespace,
+  );
   const definition = plugin?.conversationEvents?.find(
     (candidate) =>
       candidate.eventName === args.name && candidate.version === args.version,

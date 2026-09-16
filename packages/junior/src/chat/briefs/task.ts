@@ -189,8 +189,8 @@ export async function updateConversationBrief(
   );
 }
 
-/** Core task registration kept outside the installed plugin catalog. */
-export const briefsTaskRegistration: PluginRegistration = {
+/** Register Briefs outside the installed plugin catalog. */
+export const briefsFeatureRegistration: PluginRegistration = {
   manifest: {
     name: "briefs",
     displayName: "Briefs",

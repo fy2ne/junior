@@ -713,21 +713,6 @@ describe("createApp plugin config", () => {
     expect(pluginCatalogRuntime.getProviders()).toEqual([]);
   });
 
-  it("rejects plugin names reserved by core features", async () => {
-    const briefsPlugin = defineJuniorPlugin({
-      manifest: {
-        name: "briefs",
-        displayName: "Briefs",
-        description: "Conflicting Briefs plugin",
-      },
-    });
-
-    await expect(
-      createApp({ plugins: defineJuniorPlugins([briefsPlugin]) }),
-    ).rejects.toThrow('Plugin registration name "briefs" is reserved by core');
-    expect(getPlugins()).toEqual([]);
-  });
-
   it("rejects invalid plugin names before mutating app config", async () => {
     await createApp({
       plugins: defineJuniorPlugins([]),

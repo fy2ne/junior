@@ -1,13 +1,14 @@
 import type { PluginRegistration } from "@sentry/junior-plugin-api";
 import { isBriefsEnabled } from "@/chat/briefs/registration";
-import { briefsTaskRegistration } from "@/chat/briefs/task";
+import { briefsFeatureRegistration } from "@/chat/briefs/task";
 
 const coreFeatures = [
-  { isEnabled: isBriefsEnabled, registration: briefsTaskRegistration },
+  { isEnabled: isBriefsEnabled, registration: briefsFeatureRegistration },
 ];
-const CORE_FEATURE_NAMES = new Set(
-  coreFeatures.map((feature) => feature.registration.manifest.name),
-);
+/** Return all core registrations, including disabled features. */
+export function allCoreFeatureRegistrations(): PluginRegistration[] {
+  return coreFeatures.map((feature) => feature.registration);
+}
 
 /** Return enabled core feature registrations. */
 export function coreFeatureRegistrations(): PluginRegistration[] {
@@ -16,24 +17,23 @@ export function coreFeatureRegistrations(): PluginRegistration[] {
     .map((feature) => feature.registration);
 }
 
-/** Return core features followed by installed plugins. */
+/** Return enabled core features followed by installed plugins. */
 export function runtimeFeatureRegistrations(
   plugins: PluginRegistration[],
-  options: { includeDisabled?: boolean } = {},
 ): PluginRegistration[] {
-  const coreRegistrations = options.includeDisabled
-    ? coreFeatures.map((feature) => feature.registration)
-    : coreFeatureRegistrations();
-  return [...coreRegistrations, ...plugins];
+  return [...coreFeatureRegistrations(), ...plugins];
 }
 
 /** Reject a plugin that claims a core feature name. */
 export function assertNoCoreFeatureNameCollisions(
   plugins: PluginRegistration[],
 ): void {
+  const coreNames = new Set(
+    allCoreFeatureRegistrations().map((feature) => feature.manifest.name),
+  );
   for (const plugin of plugins) {
     const name = plugin.manifest.name;
-    if (CORE_FEATURE_NAMES.has(name)) {
+    if (coreNames.has(name)) {
       throw new Error(`Plugin registration name "${name}" is reserved by core`);
     }
   }

@@ -28,7 +28,6 @@ import {
   type ExperimentalFeaturesConfig,
 } from "@/chat/experimental";
 import { setBriefsConfig } from "@/chat/briefs/registration";
-import { assertNoCoreFeatureNameCollisions } from "@/chat/core-features/registration";
 import {
   getSandboxResourceConfig,
   setSandboxResourceConfig,
@@ -694,8 +693,7 @@ export async function createApp(options?: JuniorAppOptions): Promise<Hono> {
     validateBuildIncludesPluginPackages(pluginConfig, virtualConfig);
   }
   validateBuildIncludesPluginRuntimeRegistrations(plugins, virtualConfig);
-  assertNoCoreFeatureNameCollisions(configuredPlugins?.registrations ?? []);
-  validatePlugins(plugins);
+  validatePlugins(configuredPlugins?.registrations ?? []);
   getDb();
   const shouldValidatePluginCatalog =
     hasConfiguredPluginCatalog(pluginConfig) ||
